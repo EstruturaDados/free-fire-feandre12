@@ -88,7 +88,10 @@ void inserirItem(struct Item mochila[], int *contador) {
     getchar();
 
     (*contador)++;
+    int restantes = MAX_ITENS - *contador;
+
     printf("Item adicionado com sucesso.\n");
+    printf("Slots restantes no inventário: %d de %d.\n", restantes, MAX_ITENS);
 }
 
 // --- FUNÇÃO: Remover item pelo nome ---
@@ -109,10 +112,10 @@ void removerItem(struct Item mochila[], int *contador) {
     if (indice == -1) {
         printf("Item não encontrado.\n");
     } else {
-        // Substitui o item removido pelo último
-        mochila[indice] = mochila[*contador - 1];
+        mochila[indice] = mochila[*contador - 1]; // substitui o removido pelo último
         (*contador)--;
         printf("Item '%s' removido da mochila.\n", nomeRemover);
+        printf("Slots disponíveis agora: %d de %d.\n", MAX_ITENS - *contador, MAX_ITENS);
     }
 }
 
@@ -133,6 +136,8 @@ void listarItens(struct Item mochila[], int contador) {
                mochila[i].tipo,
                mochila[i].quantidade);
     }
+
+    printf("\nTotal de itens: %d | Slots livres: %d\n", contador, MAX_ITENS - contador);
 }
 
 // --- FUNÇÃO: Buscar item pelo nome (busca sequencial) ---

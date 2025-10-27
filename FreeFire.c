@@ -1,70 +1,171 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
-// Código da Ilha – Edição Free Fire
-// Nível: Mestre
-// Este programa simula o gerenciamento avançado de uma mochila com componentes coletados durante a fuga de uma ilha.
-// Ele introduz ordenação com critérios e busca binária para otimizar a gestão dos recursos.
+#define MAX_ITENS 10  // Capacidade máxima da mochila
+
+// Estrutura que representa cada item do inventário
+struct Item {
+    char nome[30];
+    char tipo[20];
+    int quantidade;
+};
+
+// --- PROTÓTIPOS DAS FUNÇÕES ---
+void inserirItem(struct Item mochila[], int *contador);
+void removerItem(struct Item mochila[], int *contador);
+void listarItens(struct Item mochila[], int contador);
+void buscarItem(struct Item mochila[], int contador);
+int buscarIndice(struct Item mochila[], int contador, char nomeBusca[]);
 
 int main() {
-    // Menu principal com opções:
-    // 1. Adicionar um item
-    // 2. Remover um item
-    // 3. Listar todos os itens
-    // 4. Ordenar os itens por critério (nome, tipo, prioridade)
-    // 5. Realizar busca binária por nome
-    // 0. Sair
+    struct Item mochila[MAX_ITENS]; // Vetor que representa a mochila
+    int contador = 0;               // Quantos itens estão cadastrados
+    int opcao;
 
-    // A estrutura switch trata cada opção chamando a função correspondente.
-    // A ordenação e busca binária exigem que os dados estejam bem organizados.
+    do {
+        // Menu principal
+        printf("\n=== SISTEMA DE INVENTÁRIO - MOCHILA DE LOOT ===\n");
+        printf("1. Adicionar item\n");
+        printf("2. Remover item\n");
+        printf("3. Listar itens\n");
+        printf("4. Buscar item\n");
+        printf("0. Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+        getchar(); // Limpa o '\n' deixado pelo scanf
+
+        switch (opcao) {
+            case 1:
+                inserirItem(mochila, &contador);
+                listarItens(mochila, contador);
+                break;
+
+            case 2:
+                removerItem(mochila, &contador);
+                listarItens(mochila, contador);
+                break;
+
+            case 3:
+                listarItens(mochila, contador);
+                break;
+
+            case 4:
+                buscarItem(mochila, contador);
+                break;
+
+            case 0:
+                printf("\nSaindo do inventário...\n");
+                break;
+
+            default:
+                printf("Opção inválida. Tente novamente.\n");
+        }
+
+    } while (opcao != 0);
 
     return 0;
 }
 
-// Struct Item:
-// Representa um componente com nome, tipo, quantidade e prioridade (1 a 5).
-// A prioridade indica a importância do item na montagem do plano de fuga.
+// --- FUNÇÃO: Inserir novo item ---
+void inserirItem(struct Item mochila[], int *contador) {
+    if (*contador >= MAX_ITENS) {
+        printf("A mochila está cheia. Não é possível adicionar mais itens.\n");
+        return;
+    }
 
-// Enum CriterioOrdenacao:
-// Define os critérios possíveis para a ordenação dos itens (nome, tipo ou prioridade).
+    printf("\n--- Adicionar Novo Item ---\n");
+    printf("Nome do item: ");
+    fgets(mochila[*contador].nome, 30, stdin);
+    mochila[*contador].nome[strcspn(mochila[*contador].nome, "\n")] = '\0'; // remove '\n'
 
-// Vetor mochila:
-// Armazena até 10 itens coletados.
-// Variáveis de controle: numItens (quantidade atual), comparacoes (análise de desempenho), ordenadaPorNome (para controle da busca binária).
+    printf("Tipo do item (arma, munição, cura...): ");
+    fgets(mochila[*contador].tipo, 20, stdin);
+    mochila[*contador].tipo[strcspn(mochila[*contador].tipo, "\n")] = '\0';
 
-// limparTela():
-// Simula a limpeza da tela imprimindo várias linhas em branco.
+    printf("Quantidade: ");
+    scanf("%d", &mochila[*contador].quantidade);
+    getchar();
 
-// exibirMenu():
-// Apresenta o menu principal ao jogador, com destaque para status da ordenação.
+    (*contador)++;
+    printf("Item adicionado com sucesso.\n");
+}
 
-// inserirItem():
-// Adiciona um novo componente à mochila se houver espaço.
-// Solicita nome, tipo, quantidade e prioridade.
-// Após inserir, marca a mochila como "não ordenada por nome".
+// --- FUNÇÃO: Remover item pelo nome ---
+void removerItem(struct Item mochila[], int *contador) {
+    if (*contador == 0) {
+        printf("Nenhum item para remover.\n");
+        return;
+    }
 
-// removerItem():
-// Permite remover um componente da mochila pelo nome.
-// Se encontrado, reorganiza o vetor para preencher a lacuna.
+    char nomeRemover[30];
+    printf("\n--- Remover Item ---\n");
+    printf("Informe o nome do item a ser removido: ");
+    fgets(nomeRemover, 30, stdin);
+    nomeRemover[strcspn(nomeRemover, "\n")] = '\0';
 
-// listarItens():
-// Exibe uma tabela formatada com todos os componentes presentes na mochila.
+    int indice = buscarIndice(mochila, *contador, nomeRemover);
 
-// menuDeOrdenacao():
-// Permite ao jogador escolher como deseja ordenar os itens.
-// Utiliza a função insertionSort() com o critério selecionado.
-// Exibe a quantidade de comparações feitas (análise de desempenho).
+    if (indice == -1) {
+        printf("Item não encontrado.\n");
+    } else {
+        // Substitui o item removido pelo último
+        mochila[indice] = mochila[*contador - 1];
+        (*contador)--;
+        printf("Item '%s' removido da mochila.\n", nomeRemover);
+    }
+}
 
-// insertionSort():
-// Implementação do algoritmo de ordenação por inserção.
-// Funciona com diferentes critérios de ordenação:
-// - Por nome (ordem alfabética)
-// - Por tipo (ordem alfabética)
-// - Por prioridade (da mais alta para a mais baixa)
+// --- FUNÇÃO: Listar todos os itens ---
+void listarItens(struct Item mochila[], int contador) {
+    if (contador == 0) {
+        printf("\nMochila vazia. Nenhum item cadastrado.\n");
+        return;
+    }
 
-// buscaBinariaPorNome():
-// Realiza busca binária por nome, desde que a mochila esteja ordenada por nome.
-// Se encontrar, exibe os dados do item buscado.
-// Caso contrário, informa que não encontrou o item.
+    printf("\n--- Itens da Mochila ---\n");
+    printf("%-20s %-15s %-10s\n", "Nome", "Tipo", "Quantidade");
+    printf("---------------------------------------------\n");
+
+    for (int i = 0; i < contador; i++) {
+        printf("%-20s %-15s %-10d\n",
+               mochila[i].nome,
+               mochila[i].tipo,
+               mochila[i].quantidade);
+    }
+}
+
+// --- FUNÇÃO: Buscar item pelo nome (busca sequencial) ---
+void buscarItem(struct Item mochila[], int contador) {
+    if (contador == 0) {
+        printf("Nenhum item na mochila.\n");
+        return;
+    }
+
+    char nomeBusca[30];
+    printf("\n--- Buscar Item ---\n");
+    printf("Digite o nome do item que deseja localizar: ");
+    fgets(nomeBusca, 30, stdin);
+    nomeBusca[strcspn(nomeBusca, "\n")] = '\0';
+
+    int indice = buscarIndice(mochila, contador, nomeBusca);
+
+    if (indice == -1) {
+        printf("Item '%s' não encontrado.\n", nomeBusca);
+    } else {
+        printf("\nItem encontrado:\n");
+        printf("Nome: %s\n", mochila[indice].nome);
+        printf("Tipo: %s\n", mochila[indice].tipo);
+        printf("Quantidade: %d\n", mochila[indice].quantidade);
+    }
+}
+
+// --- FUNÇÃO AUXILIAR: Retorna índice do item pelo nome ou -1 se não encontrado ---
+int buscarIndice(struct Item mochila[], int contador, char nomeBusca[]) {
+    for (int i = 0; i < contador; i++) {
+        if (strcmp(mochila[i].nome, nomeBusca) == 0) {
+            return i; // item encontrado
+        }
+    }
+    return -1; // não encontrado
+}
